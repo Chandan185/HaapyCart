@@ -9,14 +9,6 @@ const cloudinary=require('cloudinary');
 //register new user => api/v1/register
 exports.registerUser = catchasyncErrors(async (req, res, next) => {
   const { name, email, password } = req.body;
-  // // console.log(req.body.avatar);
-  // const base64ImageWithoutHeader = req.body.avatar.replace(
-  //   /^data:image\/(png|jpeg|jpg);base64,/,
-  //   ""
-  // );
-
-  // // Convert the base64 string to a buffer
-  // const imageBuffer = Buffer.from(base64ImageWithoutHeader, "base64");
   let result;
   try{
     result = await cloudinary.v2.uploader.upload(req.body.avatar, {
@@ -25,9 +17,7 @@ exports.registerUser = catchasyncErrors(async (req, res, next) => {
       crop: "scale"
     })
   }catch(error){
-    console.log("hi",error);
     return  next(new ErrorHandler("cloudinary error", 400));
-
   }
   
   const user = await User.create({
@@ -134,10 +124,27 @@ exports.changePassword = catchAsyncErrors(async (req, res, next) => {
 
 //update user profile => api/v1/profile/update
 exports.updateUserProfile = catchAsyncErrors(async (req, res, next) => {
+  let result;
+  try{
+    result = await cloudinary.v2.uploader.upload(req.body.avatar, {
+      folder: 'avatars',
+      width: 150,
+      crop: "scale"
+    })
+  }catch(error){
+    return  next(new ErrorHandler("cloudinary error", 400));
+
+  }
+  
   const newUserData = {
     name: req.body.name,
     email: req.body.email,
+    avatar: {
+      public_id: result.public_id,
+      url: result.secure_url,
+    },
   };
+
   const user = await User.findByIdAndUpdate(req.user.id, newUserData, {
     new: true,
     runValidators: true,

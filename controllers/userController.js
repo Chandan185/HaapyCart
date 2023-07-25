@@ -5,16 +5,38 @@ const catchAsyncErrors = require("../middlewares/catchAsyncErrors");
 const sendToken = require("../Utils/jwtToken");
 const sendEmail = require("../Utils/sendEmail");
 const crypto = require("crypto");
+const cloudinary=require('cloudinary');
 //register new user => api/v1/register
 exports.registerUser = catchasyncErrors(async (req, res, next) => {
   const { name, email, password } = req.body;
+  // // console.log(req.body.avatar);
+  // const base64ImageWithoutHeader = req.body.avatar.replace(
+  //   /^data:image\/(png|jpeg|jpg);base64,/,
+  //   ""
+  // );
+
+  // // Convert the base64 string to a buffer
+  // const imageBuffer = Buffer.from(base64ImageWithoutHeader, "base64");
+  let result;
+  try{
+    result = await cloudinary.v2.uploader.upload(req.body.avatar, {
+      folder: 'avatars',
+      width: 150,
+      crop: "scale"
+    })
+  }catch(error){
+    console.log("hi",error);
+    return  next(new ErrorHandler("cloudinary error", 400));
+
+  }
+  
   const user = await User.create({
     name,
     email,
     password,
     avatar: {
-      public_id: "cld-sample-5.jpg",
-      url: "https://res.cloudinary.com/djtg6roj7/image/upload/v1679937730/cld-sample-5.jpg",
+      public_id: result.public_id,
+      url: result.secure_url,
     },
   });
   sendToken(user, 200, res);
@@ -26,7 +48,7 @@ exports.loginUser = catchAsyncErrors(async (req, res, next) => {
 
   //checking if email and password is entered by the user
   if (!email || !password) {
-    return new ErrorHandler("Please enter email or password", 400);
+    return next(new ErrorHandler("Please enter email or password", 400));
   }
 
   //finding password in database

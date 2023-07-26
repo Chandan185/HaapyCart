@@ -4,7 +4,9 @@ const CookieParser = require("cookie-parser");
 const bodyparser = require("body-parser");
 const fileupload = require("express-fileupload");
 const dotenv = require("dotenv");
+const path=require('path')
 const app = express();
+
 app.use(express.json({ limit: "100mb" }));
 app.use(bodyparser.urlencoded({ limit: "100mb", extended: true }));
 app.use(CookieParser());
